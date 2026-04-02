@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NIFTY50 Intraday Options Assistant</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #111a33;
+      --muted: #9db0d8;
+      --text: #eaf1ff;
+      --accent: #56a1ff;
+      --accent-2: #7ef7d4;
+      --danger: #ff8f8f;
+      --border: #2a3a63;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #16254c 0%, var(--bg) 55%);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: rgba(17, 26, 51, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 22px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(86,161,255,.15), rgba(126,247,212,.08));
+    }
+
+    h1 { margin: 0 0 6px; font-size: 1.5rem; }
+    .sub { margin: 0; color: var(--muted); font-size: .95rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: .88rem;
+      letter-spacing: .2px;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #0c1430;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: .98rem;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(86,161,255,.2);
+    }
+
+    .controls {
+      padding: 0 20px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      background: linear-gradient(90deg, var(--accent), #4f6bff);
+      color: white;
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+    }
+
+    button:disabled { opacity: .6; cursor: not-allowed; }
+
+    .ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .status, .error {
+      margin: 0 20px 20px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: .92rem;
+      display: none;
+    }
+
+    .status {
+      background: rgba(126,247,212,.08);
+      border: 1px solid rgba(126,247,212,.35);
+      color: #b8ffec;
+    }
+
+    .error {
+      background: rgba(255,143,143,.08);
+      border: 1px solid rgba(255,143,143,.35);
+      color: #ffd1d1;
+    }
+
+    .output-wrap {
+      padding: 0 20px 20px;
+      display: none;
+    }
+
+    .output {
+      white-space: pre-wrap;
+      line-height: 1.55;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0b1330;
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #dbe6ff;
+      max-height: 60vh;
+      overflow: auto;
+    }
+
+    .foot {
+      padding: 0 20px 20px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    @media (max-width: 780px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📈 NIFTY50 Agentic Intraday Analysis Assistant</h1>
+      <p class="sub">Open this file directly in a browser, enter API key + market inputs, and generate a daily high-risk option buying plan.</p>
+    </div>
+
+    <div class="grid">
+      <div class="full">
+        <label for="apiKey">OpenAI-compatible API key (DeepSeek/OpenRouter/etc.)</label>
+        <input id="apiKey" type="password" placeholder="sk-..." />
+      </div>
+      <div class="full">
+        <label for="apiUrl">Chat Completions URL</label>
+        <input id="apiUrl" type="text" value="https://api.deepseek.com/v1/chat/completions" />
+      </div>
+      <div>
+        <label for="model">Model name</label>
+        <input id="model" type="text" value="deepseek-chat" />
+      </div>
+      <div>
+        <label for="year">Analysis Year</label>
+        <input id="year" type="number" value="2026" />
+      </div>
+      <div>
+        <label for="nifty">Current NIFTY50 Level</label>
+        <input id="nifty" type="number" step="0.05" value="22854.50" />
+      </div>
+      <div>
+        <label for="atm">ATM Strike</label>
+        <input id="atm" type="number" step="50" value="22850" />
+      </div>
+      <div>
+        <label for="weeklyExpiry">Current Weekly Expiry</label>
+        <input id="weeklyExpiry" type="date" value="2026-04-07" />
+      </div>
+      <div>
+        <label for="monthlyExpiry">Current Monthly Expiry</label>
+        <input id="monthlyExpiry" type="date" value="2026-04-28" />
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="runBtn">Generate Intraday Plan</button>
+      <button id="copyBtn" class="ghost" type="button">Copy Output</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="error" class="error"></div>
+
+    <div id="outputWrap" class="output-wrap">
+      <div id="output" class="output"></div>
+    </div>
+
+    <div class="foot">
+      Educational use only. This is not investment advice. Options trading has high risk and can result in full capital loss.
+    </div>
+  </div>
+
+  <script>
+    const ui = {
+      apiKey: document.getElementById('apiKey'),
+      apiUrl: document.getElementById('apiUrl'),
+      model: document.getElementById('model'),
+      year: document.getElementById('year'),
+      nifty: document.getElementById('nifty'),
+      atm: document.getElementById('atm'),
+      weekly: document.getElementById('weeklyExpiry'),
+      monthly: document.getElementById('monthlyExpiry'),
+      runBtn: document.getElementById('runBtn'),
+      copyBtn: document.getElementById('copyBtn'),
+      status: document.getElementById('status'),
+      error: document.getElementById('error'),
+      outputWrap: document.getElementById('outputWrap'),
+      output: document.getElementById('output')
+    };
+
+    const showStatus = (msg) => {
+      ui.status.style.display = 'block';
+      ui.status.textContent = msg;
+    };
+
+    const clearStatus = () => {
+      ui.status.style.display = 'none';
+      ui.status.textContent = '';
+    };
+
+    const showError = (msg) => {
+      ui.error.style.display = 'block';
+      ui.error.textContent = `❌ ${msg}`;
+    };
+
+    const clearError = () => {
+      ui.error.style.display = 'none';
+      ui.error.textContent = '';
+    };
+
+    const buildPrompt = () => {
+      const today = new Date().toISOString().slice(0, 10);
+      return `AI - NIFTY50 OPTION TRADING ANALYSIS FOR CURRENT WEEKLY AND MONTHLY EXPIRY AT YEAR <${ui.year.value}>.
+You are an expert financial analyst specializing in the Indian equity and derivatives markets, especially Nifty50 Options.
+The current Nifty50 index level is <${ui.nifty.value}>.
+Using a combination of:
+- Technical analysis (candlestick patterns, intraday indicators, support/resistance, implied volatility, option Greeks, etc.)
+- Fundamental analysis (macroeconomic cues, FII/DII flows, sectoral news, global markets impact)
+- Real-time news sentiment (headlines, corporate announcements, RBI commentary, geopolitical developments)
+
+Produce a short report with intraday probability estimates (in percentages) for whether Nifty 50 will move:
+1) Upside
+2) Downside
+3) Highly volatile (big up/down swings)
+
+Specifically:
+1. Starting from current ATM <${ui.atm.value}>, calculate probability (%) that index will finish the trading day:
+   - higher
+   - lower
+   - roughly flat
+   Clearly state assumptions and main drivers.
+2. Based on probabilities, recommend option-buying near ATM likely to yield highest expected intraday profit:
+   - Buy Call near ATM only
+   - Buy Put near ATM only
+   For each strategy estimate expected return (%) and major risks.
+
+Trading window: 9:15 AM to 3:30 PM IST. Use high-risk approach.
+Use <CURRENT MONTHLY EXPIRY ${ui.monthly.value}> and <CURRENT WEEKLY EXPIRY ${ui.weekly.value}>.
+
+At end, provide concise actionable summary:
+- Should I buy calls, buy puts, or buy both today?
+- Which strikes would you choose for intraday?
+- Approximate premium (₹) and probability (%) for each recommended position.
+
+Today's date: ${today}. If live data is unavailable, provide a clearly labeled simulated view with realistic assumptions.`;
+    };
+
+    async function runAnalysis() {
+      clearError();
+      clearStatus();
+
+      if (!ui.apiKey.value.trim()) return showError('Enter API key.');
+      if (!ui.apiUrl.value.trim()) return showError('Enter API URL.');
+      if (!ui.model.value.trim()) return showError('Enter model name.');
+
+      ui.runBtn.disabled = true;
+      showStatus('Generating analysis...');
+
+      try {
+        const response = await fetch(ui.apiUrl.value.trim(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${ui.apiKey.value.trim()}`
+          },
+          body: JSON.stringify({
+            model: ui.model.value.trim(),
+            temperature: 0.4,
+            max_tokens: 1800,
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a senior derivatives analyst. Give concise, structured output with explicit probabilities and risk notes. Mention assumptions clearly.'
+              },
+              { role: 'user', content: buildPrompt() }
+            ]
+          })
+        });
+
+        if (!response.ok) {
+          const maybeJson = await response.json().catch(() => ({}));
+          throw new Error(maybeJson.error?.message || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const message = data?.choices?.[0]?.message?.content || 'No output returned by model.';
+        ui.output.textContent = message;
+        ui.outputWrap.style.display = 'block';
+        showStatus('Done. Review the generated plan below.');
+      } catch (err) {
+        showError(err.message || 'Request failed.');
+      } finally {
+        ui.runBtn.disabled = false;
+      }
+    }
+
+    ui.runBtn.addEventListener('click', runAnalysis);
+    ui.copyBtn.addEventListener('click', async () => {
+      const text = ui.output.textContent.trim();
+      if (!text) return showError('No output to copy yet.');
+      await navigator.clipboard.writeText(text);
+      showStatus('Output copied to clipboard.');
+    });
+  </script>
+</body>
+</html>
